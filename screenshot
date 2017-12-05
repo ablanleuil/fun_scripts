@@ -1,0 +1,18 @@
+#!/bin/zsh
+
+OUTPUT=/tmp/screenshot.png
+SAVE=~/images/$2_`date +'%Y%m%d%H%M%S'`.png
+
+if [[ $1 = 'window' ]]; then
+  import -window `xdotool selectwindow` $OUTPUT
+elif [[ $1 = 'screen' ]]; then
+  import -window root $OUTPUT
+elif [[ $1 = 'region' ]]; then
+  import $OUTPUT
+fi
+
+if [[ $2 != '' ]]; then
+  cp $OUTPUT $SAVE
+fi
+
+xclip -selection clipboard -t image/png -i $OUTPUT

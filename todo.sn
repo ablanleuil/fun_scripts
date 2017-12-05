@@ -1,0 +1,22 @@
+
+{ doc: "
+  todo <action> [parameters]
+  
+  actions:
+    list                lists all tasks
+    show task           shows a task's items
+    showall             shows all tasks and their items
+    add task desc prio? adds an item to a task with priority [prio] (default to 0)
+    dump [task] file    flushes all tasks in a *.md file
+    remove [task]       removes all given tasks
+    check task [slice]  check all items of a given task which are contained in the slices.
+  
+                        slices come in 3 flavors
+                          -x : from beg to x
+                         x-  : from x to end
+                         x-y : between x and y
+  
+    help                shows this message
+  "
+  tasks: {}
+}

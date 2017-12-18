@@ -14,7 +14,7 @@ import System.FilePath.Posix ( (</>), dropFileName )
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Catch (catchAll, MonadThrow)
 import Control.Monad
-import Control.Exception (bracket)
+import Control.Exception.Base (evaluate)
 import Data.Maybe
 import Data.List (sort, reverse)
 import Data.Function (on)
@@ -167,7 +167,7 @@ dumpTasks l = do
             $ map dumpTask names
 
   -- Writes the file
-  liftIO $ bracket (openFile file WriteMode) hClose (\h -> hPutStr h ret)
+  liftIO $ withFile file WriteMode (\h -> hPutStr h ret)
 
 main = do
   args <- getArgs
@@ -175,7 +175,9 @@ main = do
 
   let filename = dir </> "todo.sn"
 
-  content <- fmap read $ readFile filename
+  content <- withFile filename
+                      ReadMode
+                      (\h -> hGetContents h >>= evaluate . read)
 
   let action = case args of {
     ("list":_) -> printList;
@@ -192,6 +194,8 @@ main = do
    
   -- Re-writes the file if any modification was done
   if ret /= content then
-    writeFile filename (show ret)
+    withFile filename
+             WriteMode
+             (\h -> hPrint h ret >> hFlush h)
   else return ()
 

@@ -7,12 +7,12 @@ import Data.List.Split (splitOn)
 import Text.Shaun
 import Text.Shaun.Sweeper
 import Text.Shaun.Types (insert, append)
-import System.IO hiding (hGetContents)
-import System.IO.Strict
+import System.IO-- hiding (hGetContents)
+--import System.IO.Strict
 import System.Environment ( getArgs, getExecutablePath )
 import System.FilePath.Posix ( (</>), dropFileName )
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Catch (catchAll)
+import Control.Monad.Catch (catchAll, MonadThrow)
 import Control.Monad
 import Control.Exception (bracket)
 import Data.Maybe
@@ -36,9 +36,13 @@ instance Shaun Item where
                                      , ("date", toShaun da)
                                      , ("check", toShaun c)
                                      , ("prio", toShaun p) ]
-  fromShaun (SObject m) = Item (get "desc") (get "date") (get "check") (get "prio")
-    where get s = fromShaun $ fromJust $ lookup s m
-  fromShaun _ = error "Cannot compute Item: bad ShaunValue"
+
+  fromShaun = withSweeperT $ do
+    desc <- getTo "desc" >>= fromShaun
+    date <- getTo "date" >>= fromShaun
+    check <- getTo "check" >>= fromShaun
+    prio <- getTo "prio" >>= fromShaun
+    return $ Item desc date check prio
 
 instance Show Slice where
   show (From a) = show a ++ "-"
@@ -91,7 +95,7 @@ checkTask name slices = do
   set $ toShaun $ zipWith
     (\id it -> it { check = check it || any (into id) slices })
     [1..]
-    $ reverse $ sort $ map fromShaun items -- Sort in descending priority order
+    $ reverse $ sort $ map (fromJust . fromShaun) items -- Sort in descending priority order
 
 -- Removes all items in a task+the task itself
 removeTasks :: [String] -> SweeperT IO ()
@@ -124,7 +128,7 @@ showTask t = do
   return $ case lookup t o of
     Just (SList l) -> zipWith (\i (s :: Item) -> show i ++ ": " ++ show s)
                               [1..]
-                              $ reverse $ sort $ map fromShaun l
+                              $ reverse $ sort $ map (fromJust . fromShaun) l
     _ -> []
 
 showAllTasks :: SweeperT IO ()

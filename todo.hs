@@ -38,11 +38,12 @@ instance Shaun Item where
                                      , ("prio", toShaun p) ]
 
   fromShaun = withSweeperT $ do
-    desc <- getTo "desc" >>= fromShaun
-    date <- getTo "date" >>= fromShaun
-    check <- getTo "check" >>= fromShaun
-    prio <- getTo "prio" >>= fromShaun
+    desc  <- get "desc"
+    date  <- get "date"
+    check <- get "check"
+    prio  <- get "prio"
     return $ Item desc date check prio
+    where get s = peek (getTo s >>= fromShaun)
 
 instance Show Slice where
   show (From a) = show a ++ "-"
@@ -174,9 +175,7 @@ main = do
 
   let filename = dir </> "todo.sn"
 
-  str <- bracket (openFile filename ReadMode) hClose hGetContents
-
-  let content = read str
+  content <- fmap read $ readFile filename
 
   let action = case args of {
     ("list":_) -> printList;
@@ -193,6 +192,6 @@ main = do
    
   -- Re-writes the file if any modification was done
   if ret /= content then
-    bracket (openFile filename WriteMode) hClose (\h -> hPutStr h $ show ret)
+    writeFile filename (show ret)
   else return ()
 
